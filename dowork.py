@@ -12,19 +12,33 @@ import pickle
 import numpy as np
 import random
 import math
-
-from sklearn.metrics import confusion_matrix
 from sklearn.metrics import confusion_matrix,precision_score,recall_score,f1_score
 
 
 def get_classify_count(path):
     labels = []
     texts = []
-    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'travel']
+    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'house']
     start_time = time.time()
-    file = open(path, encoding='UTF-8')
-    articals = file.readlines()
-    file.close()
+
+    filea = open(path, encoding='UTF-8')
+    articals = filea.readlines()
+    filea.close()
+
+    fileb = open("corpus_old.txt", encoding='UTF-8')
+    article_listb = fileb.readlines()
+    fileb.close()
+
+    fileb = open("corpus_old.txt", encoding='UTF-8')
+    article_listb = fileb.readlines()
+    fileb.close()
+
+    filec = open("tempall.txt", encoding='UTF-8')
+    article_listc = filec.readlines()
+    filec.close()
+
+    articals.extend(article_listb)
+    articals.extend(article_listc)
     stopwords = get_stopword()
     counta = 0
     for i in range(len(articals)//6):
@@ -72,13 +86,13 @@ def get_stopword():
     return stopword_set
     # 获取对应类别的索引下标值
 def lable2id(label):
-    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'travel']
+    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'house']
     for i in range(len(classes)):
         if label == classes[i]:
             return i
     raise Exception('Error label %s' % (label))
 def doc_dict():
-    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'travel']
+    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'house']
     return [0] * len(classes)
 def tfidf():
     """
@@ -104,7 +118,7 @@ def tfidf():
     trainText = trainText[:num // 2]
     print("训练集大小：", len(trainText))
     print("测试集大小：", len(testText))
-    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'travel']
+    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'house']
 
     docCount = [0] * len(classes)  # 各类别单词计数
     wordCount = defaultdict(doc_dict)  # 每个单词在每个类别中的计数
@@ -127,7 +141,7 @@ def tfidf():
             wordAll.add(wordu)
 
     # 计算每个词的TF值
-    word_tf = defaultdict(doc_dict)  # 存储没个词的tf值
+    word_tf = defaultdict(doc_dict)  # 存储每个词的tf值
     for k,vs in wordCount.items():
         word_idf = math.log(docsum/(wordTotal[k]+1))
         for i in range(len(vs)):
@@ -137,31 +151,29 @@ def tfidf():
 
     fWords = set()
     #遍历每个单词
+    # [('系列',
+    #   [0.07069207490052264, 0.0004569980602163192, 0.00014678108673421724, 0.0004949781437722148, 8.229827417144861e-05,
+    #    0.00019064948048112265, 1.7794987217198647e-05, 9.915790076623034e-05, 0.011894693491561964,
+    #    1.651785279443384e-05]),]
     for i in range(len(docCount)):
         keyf = lambda x:x[1][i]
         sortedDict = sorted(word_tf.items(),key = keyf,reverse=True)
         t = ','.join([w[0] for w in sortedDict[:20]])
-        #print(classes[i], ':', t)
         for j in range(1000):
-            fWords.add(sortedDict[j][0])
+             fWords.add(sortedDict[j][0])
     out = open("ahah", 'w', encoding='utf-8')
-    # 输出各个类的文档数目
+    # 输出各个类的单词数目
     out.write(str(docCount) + "\n")
-    # 输出互信息最高的词作为特征词
+    # 输出tf-idf最高的词作为特征词
     for fword in fWords:
         out.write(fword + "\n")
     print("特征词写入完毕！")
     out.close()
-    print(len(wordAll))
     return testText, trainText,fWords
     # out = open("haha", 'w', encoding='utf-8')
     # for aa,bb in word_tf.items():
     #     out.write(aa+"\t"+str(bb)+"\n")
     # out.close()
-
-    # 对字典按值由大到小排序
-    # dict_feature_select = sorted(word_tf_idf.items(), key=operator.itemgetter(1), reverse=True)
-    # return dict_feature_select
 def huxinxi():
     # 读取上一步保存的数据
     with open("./split_data.pkl", "rb") as f:
@@ -177,12 +189,13 @@ def huxinxi():
     num = len(trainText)
     testText = trainText[num // 2:]
     trainText = trainText[:num // 2]
+
     print("训练集大小：", len(trainText))  # 685111
     print("测试集大小：", len(testText))  # 685112
     # 文章类别列表
-    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'travel']
+    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'house']
     # 构造和类别数等长的0向量
-
+    sys.exit(0)
     # 计算互信息，这里log的底取为2
     def mutual_info(N, Nij, Ni_, N_j):
         return 1.0 * Nij / N * math.log(N * 1.0 * (Nij + 1) / (Ni_ * N_j)) / math.log(2)
@@ -244,23 +257,30 @@ def huxinxi():
     # 从特征文件导入特征词
 def load_feature_words(featureFile):
         f = open(featureFile, encoding='utf-8')
-        # 各个类的文档数目
+        #读取第一行
         docCounts = eval(f.readline())
         features = set()
         # 读取特征词
         for line in f:
             features.add(line.strip())
         f.close()
+        # print("-----------")
+        # print(docCounts+"!!!!!!!!!!\n"+features)
+        # print("---------")
+        # sys.exit(0)
         return docCounts, features
 def modeltrain(t):
     # 训练贝叶斯模型，实际上计算每个类中特征词的出现次数
+    #即类别i下单词k的出现概率，并使用拉普拉斯平滑（加一平滑）
+    #ahah.txt,traintext,modelfile(空)
     def train_bayes(featureFile, textFile, modelFile):
         print("使用朴素贝叶斯训练中...")
         start = datetime.datetime.now()
+        #docCounts为每一类单词总数，feature是词袋
         docCounts, features = load_feature_words(featureFile)  # 读取词频统计和特征词
         wordCount = defaultdict(doc_dict)
 
-        # 每类文档特征词出现的次数
+        #类别index中单词总数计数
         tCount = [0] * len(docCounts)
         # 遍历每个文档
         for line in textFile:
@@ -275,7 +295,7 @@ def modeltrain(t):
         print("训练完毕，写入模型...")
         print("程序运行时间：" + str((end - start).seconds) + "秒")
 
-        # 拉普拉斯平滑
+        # 加一平滑
         outModel = open(modelFile, 'w', encoding='utf-8')
         # 遍历每个单词
         for k, v in wordCount.items():
@@ -299,6 +319,7 @@ def load_model(modelFile):
     # 预测文档分类，标准输入每一行为一个文档
 def predict(featureFile, modelFile, testText,wa):
         docCounts, features = load_feature_words(featureFile)  # 读取词频统计和特征词
+        #每类别的概率
         docScores = [math.log(count * 1.0 / sum(docCounts)) for count in docCounts]  # 每个类别出现的概率
         scores = load_model(modelFile)  # 加载模型，每个单词在类别中出现的概率
         indexList = []
@@ -317,27 +338,25 @@ def predict(featureFile, modelFile, testText,wa):
                         preValues[i] += math.log(scores[word][i])
             m = max(preValues)  # 取出最大值
             pIndex = preValues.index(m)  # 取出最大值类别的索引
-            indexList.append(index)
-            pIndexList.append(pIndex)
+            indexList.append(index) #测试文档原本分类
+            pIndexList.append(pIndex) #预测分类
 
         end = datetime.datetime.now()
         print("程序运行时间：" + str((end - start).seconds) + "秒")
         return indexList, pIndexList
 def doc_dict():
-    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'travel']
+    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'house']
     return [0]*len(classes)
 if __name__ == '__main__':
     #join阻塞
     #get_classify_count("./cor.txt")
     #get_stopword()
-    # ta, t = huxinxi()
     ta,t,wa = tfidf()
     modeltrain(t)
     indexList, pIndexList = predict('./featureFile', './modelFile', ta,wa)
     C=confusion_matrix(indexList, pIndexList)
-    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'travel']
+    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'house']
     pd.DataFrame(C, index=classes, columns=classes)
-
     #计算各类的精确率，召回率，F1值
     p = precision_score(indexList, pIndexList, average=None)
     r = recall_score(indexList, pIndexList, average=None)
