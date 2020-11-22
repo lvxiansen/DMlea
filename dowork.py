@@ -169,92 +169,15 @@ def tfidf():
         out.write(fword + "\n")
     print("特征词写入完毕！")
     out.close()
-    return testText, trainText,fWords
+    #return testText, trainText,fWords
+    with open("testtrainfwords.pkl", 'wb') as fttf:
+        pickle.dump(testText, fttf)
+        pickle.dump(trainText, fttf)
+        pickle.dump(fWords, fttf)
     # out = open("haha", 'w', encoding='utf-8')
     # for aa,bb in word_tf.items():
     #     out.write(aa+"\t"+str(bb)+"\n")
     # out.close()
-def huxinxi():
-    # 读取上一步保存的数据
-    with open("./split_data.pkl", "rb") as f:
-        labels = pickle.load(f)
-        texts = pickle.load(f)
-    # 划分训练集和测试集，大小各一半
-    print(len(np.unique(labels)))
-    trainText = []
-    for i in range(len(labels)):
-        trainText.append(labels[i] + ' ' + texts[i])
-    # 数据随机
-    random.shuffle(trainText)
-    num = len(trainText)
-    testText = trainText[num // 2:]
-    trainText = trainText[:num // 2]
-
-    print("训练集大小：", len(trainText))  # 685111
-    print("测试集大小：", len(testText))  # 685112
-    # 文章类别列表
-    classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'house']
-    # 构造和类别数等长的0向量
-    sys.exit(0)
-    # 计算互信息，这里log的底取为2
-    def mutual_info(N, Nij, Ni_, N_j):
-        return 1.0 * Nij / N * math.log(N * 1.0 * (Nij + 1) / (Ni_ * N_j)) / math.log(2)
-
-    # 统计每个词在每个类别出现的次数，和每类的文档数，计算互信息，提取特征词
-    def count_for_cates(trainText, featureFile):
-        docCount = [0] * len(classes)  # 各类别单词计数
-        wordCount = defaultdict(doc_dict)  # 每个单词在每个类别中的计数
-
-        # 扫描文件和计数
-        for line in trainText:
-            lable, text = line.strip().split(' ', 1)
-            index = lable2id(lable)  # 类别索引
-            words = text.split(' ')
-            for word in words:
-                if word in [' ', '', '\n']:
-                    continue
-                wordCount[word][index] += 1
-                docCount[index] += 1
-
-        # 计算互信息值
-        print("计算互信息，提取特征词中，请稍后...")
-        miDict = defaultdict(doc_dict)
-        N = sum(docCount)
-
-        # 遍历每个分类，计算词项k与文档类别i的互信息MI
-        for k, vs in wordCount.items():
-            for i in range(len(vs)):
-                N11 = vs[i]  # 类别i下单词k的数量
-                N10 = sum(vs) - N11  # 非类别i下单词k的数量
-                N01 = docCount[i] - N11  # 类别i下其他单词数量
-                N00 = N - N11 - N10 - N01  # 其他类别中非k单词数目
-                mi = mutual_info(N, N11, N10 + N11, N01 + N11) + mutual_info(N, N10, N10 + N11,N00 + N10) + mutual_info(N, N01, N01 + N11,
-                                                                                            N01 + N00) + mutual_info(
-                    N, N00, N00 + N10, N00 + N01)
-                miDict[k][i] = mi
-
-        fWords = set()
-        # 遍历每个单词
-        for i in range(len(docCount)):
-            keyf = lambda x: x[1][i]
-            sortedDict = sorted(miDict.items(), key=keyf, reverse=True)
-            # 打印每个类别中排名前20的特征词
-            t = ','.join([w[0] for w in sortedDict[:20]])
-            print(classes[i], ':', t)
-            for j in range(1000):
-                fWords.add(sortedDict[j][0])
-
-        out = open(featureFile, 'w', encoding='utf-8')
-        # 输出各个类的文档数目
-        out.write(str(docCount) + "\n")
-        # 输出互信息最高的词作为特征词
-        for fword in fWords:
-            out.write(fword + "\n")
-        print("特征词写入完毕！")
-        out.close()
-    count_for_cates(trainText, 'featureFile')
-    return testText,trainText
-    # 从特征文件导入特征词
 def load_feature_words(featureFile):
         f = open(featureFile, encoding='utf-8')
         #读取第一行
@@ -351,8 +274,12 @@ if __name__ == '__main__':
     #join阻塞
     #get_classify_count("./cor.txt")
     #get_stopword()
-    ta,t,wa = tfidf()
-    modeltrain(t)
+    #tfidf()
+    with open("./testtrainfwords.pkl", "rb") as faaf:
+        ta = pickle.load(faaf)
+        t = pickle.load(faaf)
+        wa = pickle.load(faaf)
+    #modeltrain(t)
     indexList, pIndexList = predict('./featureFile', './modelFile', ta,wa)
     C=confusion_matrix(indexList, pIndexList)
     classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'house']
