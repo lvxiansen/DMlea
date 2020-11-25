@@ -29,9 +29,6 @@ def get_classify_count(path):
     article_listb = fileb.readlines()
     fileb.close()
 
-    fileb = open("corpus_old.txt", encoding='UTF-8')
-    article_listb = fileb.readlines()
-    fileb.close()
 
     filec = open("tempall.txt", encoding='UTF-8')
     article_listc = filec.readlines()
@@ -41,6 +38,8 @@ def get_classify_count(path):
     articals.extend(article_listc)
     stopwords = get_stopword()
     counta = 0
+    #labelimit = [0] * len(classes)
+    labelimit = defaultdict(int)
     for i in range(len(articals)//6):
         #对新闻标签和内容进行预处理
         url_whole = articals[i*6+1]
@@ -50,6 +49,10 @@ def get_classify_count(path):
         url_list = url_whole.split('.')
         index = url_list.index('sohu')
         counta += 1
+
+        if(labelimit[url_list[index-1]]>160000):
+            continue
+        labelimit[url_list[index-1]] += 1
         if(len(content)>30 and len(content)<3000):
             if url_list[index-1] in classes:
                 result_content = ""
@@ -107,15 +110,20 @@ def tfidf():
         labels = pickle.load(f)
         texts = pickle.load(f)
     # 划分训练集和测试集，大小各一半
-    print(len(np.unique(labels)))
+    from sklearn.model_selection import train_test_split
+    traindata,testdata,train_class,test_class = train_test_split(texts,labels,test_size=0.5,shuffle=True)
+    #print(len(np.unique(labels)))
     trainText = []
-    for i in range(len(labels)):
-        trainText.append(labels[i] + ' ' + texts[i])
+    for i in range(len(train_class)):
+        trainText.append(train_class[i] + ' ' + traindata[i])
+    testText = []
+    for i in range(len(test_class)):
+        testText.append(test_class[i] + ' ' + testdata[i])
     # 数据随机
-    random.shuffle(trainText)
-    num = len(trainText)
-    testText = trainText[num // 2:]
-    trainText = trainText[:num // 2]
+    #random.shuffle(trainText)
+    # num = len(trainText)
+    # testText = trainText[num // 2:]
+    # trainText = trainText[:num // 2]
     print("训练集大小：", len(trainText))
     print("测试集大小：", len(testText))
     classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'house']
@@ -214,9 +222,6 @@ def modeltrain(t):
                 if word in features and word not in [' ', '', '\n']:
                     tCount[index] += 1  # 类别index中单词总数计数
                     wordCount[word][index] += 1  # 类别index中单词word的计数
-        end = datetime.datetime.now()
-        print("训练完毕，写入模型...")
-        print("程序运行时间：" + str((end - start).seconds) + "秒")
 
         # 加一平滑
         outModel = open(modelFile, 'w', encoding='utf-8')
@@ -225,6 +230,9 @@ def modeltrain(t):
             # 遍历每个类别i，计算该类别下单词的出现概率（频率）
             scores = [(v[i] + 1) * 1.0 / (tCount[i] + len(wordCount)) for i in range(len(v))]
             outModel.write(k + "\t" + str(scores) + "\n")  # 保存模型，记录类别i下单词k的出现概率（频率）
+        end = datetime.datetime.now()
+        print("训练完毕，写入模型...")
+        print("程序运行时间：" + str((end - start).seconds) + "秒")
         outModel.close()
 
     train_bayes('./ahah', t, './modelFile')
@@ -272,16 +280,17 @@ def doc_dict():
     return [0]*len(classes)
 if __name__ == '__main__':
     #join阻塞
-    #get_classify_count("./cor.txt")
+    get_classify_count("./cor.txt")
     #get_stopword()
-    #tfidf()
+    tfidf()
     with open("./testtrainfwords.pkl", "rb") as faaf:
-        ta = pickle.load(faaf)
-        t = pickle.load(faaf)
+        test = pickle.load(faaf)
+        train = pickle.load(faaf)
         wa = pickle.load(faaf)
-    #modeltrain(t)
-    indexList, pIndexList = predict('./featureFile', './modelFile', ta,wa)
+    modeltrain(train)
+    indexList, pIndexList = predict('./ahah', './modelFile', test,wa)
     C=confusion_matrix(indexList, pIndexList)
+    print(C)
     classes = ['it', 'auto', 'stock', 'yule', 'sports', 'business', 'health', 'learning', 'women', 'house']
     pd.DataFrame(C, index=classes, columns=classes)
     #计算各类的精确率，召回率，F1值

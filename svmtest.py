@@ -1,6 +1,6 @@
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
 
 
 categories = ['alt.atheism', 'soc.religion.christian', 'comp.graphics', 'sci.med']
